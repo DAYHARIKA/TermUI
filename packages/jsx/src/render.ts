@@ -9,7 +9,7 @@
 import { App, type KeyEvent } from '@termuijs/core';
 import { Box, Widget } from '@termuijs/widgets';
 import type { VNode, FC } from './vnode.js';
-import { reconcile, unmountAll } from './reconciler.js';
+import { reconcile, unmountAll, reRenderComponent } from './reconciler.js';
 import { setRequestRender } from './hooks.js';
 import { createElement } from './createElement.js';
 
@@ -63,8 +63,17 @@ export async function render(
 
     // Set up the re-render loop
     setRequestRender(() => {
-        // Rebuild the widget tree
-        const newRoot = reconcile(element);
+        // Re-render from the root component instance to preserve fiber state (useState, useRef, etc.)
+        // Falling back to a full reconcile only when the root instance is not found.
+        const instances: Map<Widget, any> = (globalThis as any).__termuijs_instances;
+        const rootInstance = instances?.get(rootWidget);
+
+        let newRoot: Widget;
+        if (rootInstance) {
+            newRoot = reRenderComponent(rootInstance);
+        } else {
+            newRoot = reconcile(element);
+        }
 
         // Replace root's children
         rootBox.clearChildren();
@@ -88,6 +97,16 @@ export async function render(
             unmountAll();
             appInstance.exit();
             return;
+        }
+
+        // Dispatch to every component fiber that has a useInput handler
+        const instances: Map<Widget, any> = (globalThis as any).__termuijs_instances;
+        if (instances) {
+            for (const inst of instances.values()) {
+                if (inst?.fiber?.onInput) {
+                    inst.fiber.onInput(event);
+                }
+            }
         }
     });
 

@@ -6,7 +6,7 @@
 // and applies minimal Widget mutations.
 // ─────────────────────────────────────────────────────
 
-import { Box, Text, Widget } from '@termuijs/widgets';
+import { Box, Text, Widget, ProgressBar } from '@termuijs/widgets';
 import type { Style, Color } from '@termuijs/core';
 import type { VNode, VElement, FC } from './vnode.js';
 import { isVElement, isVFragment, Fragment, flattenChildren } from './vnode.js';
@@ -28,6 +28,8 @@ interface ComponentInstance {
 }
 
 const _instanceMap = new Map<Widget, ComponentInstance>();
+// Expose globally so render() and @termuijs/testing can dispatch to useInput handlers
+(globalThis as any).__termuijs_instances = _instanceMap;
 
 // ── Parent fiber tracking ──
 // Tracks the currently-rendering fiber so child components
@@ -91,6 +93,17 @@ function createIntrinsicWidget(tag: string, props: Record<string, any>, children
                 height: 1,
                 fg: color,
                 dim: true,
+            });
+        }
+
+        case 'progressbar': {
+            return new ProgressBar(style, {
+                value:       typeof props.value === 'number' ? props.value : 0,
+                fillChar:    props.fillChar,
+                emptyChar:   props.emptyChar,
+                fillColor:   props.fillColor ? parseColorProp(props.fillColor) : undefined,
+                showLabel:   props.showLabel !== false,
+                labelFormat: props.labelFormat,
             });
         }
 
