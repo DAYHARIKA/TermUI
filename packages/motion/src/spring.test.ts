@@ -2,7 +2,7 @@
 // @termuijs/motion — Tests for Spring Physics
 // ─────────────────────────────────────────────────────
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { stepSpring, SPRING_PRESETS } from './spring.js';
 import type { SpringState } from './spring.js';
 
@@ -58,5 +58,52 @@ describe('stepSpring', () => {
         expect(SPRING_PRESETS).toHaveProperty('stiff');
         expect(SPRING_PRESETS).toHaveProperty('slow');
         expect(SPRING_PRESETS).toHaveProperty('molasses');
+    });
+});
+
+// caps.motion is evaluated at module load time, so each test must:
+// 1. vi.stubEnv() to set NO_MOTION
+// 2. vi.resetModules() to clear the cached module
+// 3. dynamically import() to get a fresh module with the stubbed env
+
+describe('animateSpring — caps.motion=false', () => {
+    beforeEach(() => {
+        vi.unstubAllEnvs();
+        vi.resetModules();
+    });
+
+    it('calls onFrame(to) immediately and synchronously', async () => {
+        vi.stubEnv('NO_MOTION', '1');
+        vi.stubEnv('CI', '');
+        vi.resetModules();
+        const { animateSpring } = await import('./spring.js');
+
+        const frames: number[] = [];
+        animateSpring(0, 42, {}, v => frames.push(v));
+
+        expect(frames).toEqual([42]);
+    });
+
+    it('calls onComplete immediately', async () => {
+        vi.stubEnv('NO_MOTION', '1');
+        vi.stubEnv('CI', '');
+        vi.resetModules();
+        const { animateSpring } = await import('./spring.js');
+
+        let completed = false;
+        animateSpring(0, 42, {}, () => {}, () => { completed = true; });
+
+        expect(completed).toBe(true);
+    });
+
+    it('returns a no-op cancel function', async () => {
+        vi.stubEnv('NO_MOTION', '1');
+        vi.stubEnv('CI', '');
+        vi.resetModules();
+        const { animateSpring } = await import('./spring.js');
+
+        const cancel = animateSpring(0, 42, {}, () => {});
+        // Should not throw
+        expect(() => cancel()).not.toThrow();
     });
 });

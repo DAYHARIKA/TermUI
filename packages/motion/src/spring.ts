@@ -79,19 +79,18 @@ export function animateSpring(
     const cfg = { ...SPRING_PRESETS.default, ...config };
     let state: SpringState = { value: from, velocity: 0, target: to, done: false };
     let lastTime = Date.now();
-    let unsub: (() => void) | undefined;
 
-    unsub = subscribe(16, () => {
+    const unsub = subscribe(16, () => {
         const now = Date.now();
         const dt = (now - lastTime) / 1000; // Use wall-clock time for accurate physics
         lastTime = now;
         state = stepSpring(state, cfg, dt);
         onFrame(state.value);
         if (state.done) {
-            unsub?.();
+            unsub();
             onComplete?.();
         }
     });
 
-    return () => unsub?.();
+    return () => unsub();
 }

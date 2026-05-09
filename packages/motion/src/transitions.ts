@@ -42,20 +42,19 @@ export function transition(options: TransitionOptions): () => void {
     }
 
     const startTime = Date.now();
-    let unsub: (() => void) | undefined;
 
-    unsub = subscribe(16, () => {
+    const unsub = subscribe(16, () => {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / durationMs, 1);
         const easedT = easing(t);
         onFrame(easedT);
         if (t >= 1) {
-            unsub?.();
+            unsub();
             onComplete?.();
         }
     });
 
-    return () => unsub?.();
+    return () => unsub();
 }
 
 // ── Pre-built transitions ──
