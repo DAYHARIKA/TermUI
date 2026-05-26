@@ -75,8 +75,8 @@ async function main() {
     console.log();
     console.log(`  Next steps:`);
     console.log(`    cd ${projectName}`);
-    console.log(`    npm install`);
-    console.log(`    npm run dev`);
+    console.log(`    bun install`);
+    console.log(`    bun run dev`);
     console.log();
 }
 

@@ -1,14 +1,15 @@
 // ─────────────────────────────────────────────────────
 // Dev Server — orchestrates hot-reload + DevTools
 //
-// Forks the user's entry file as a child process.
+// Spawns the user's entry file as a Bun child process.
 // When a file change is detected, the child is killed
 // and respawned, giving the effect of "hot reload".
+// Bun runs .ts/.tsx natively, no loader flag required.
 // ─────────────────────────────────────────────────────
 
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import { fork, type ChildProcess } from 'node:child_process';
+import type { Subprocess } from 'bun';
 import { FileWatcher, type FileChange } from './watcher.js';
 import { DevTools } from './devtools.js';
 
@@ -23,11 +24,13 @@ export interface DevServerOptions {
     onReload?: (change: FileChange) => void;
     /** Whether to show DevTools */
     devTools?: boolean;
-    /** Extra Node.js flags to pass to the child process */
-    nodeFlags?: string[];
+    /** Extra Bun runtime flags to pass to the child process */
+    bunFlags?: string[];
     /** Debounce interval in ms before killing/respawning (default: 200) */
     debounce?: number;
 }
+
+type ChildSubprocess = Subprocess<'pipe', 'inherit', 'inherit'>;
 
 export class DevServer {
     private _watcher: FileWatcher;
@@ -38,16 +41,16 @@ export class DevServer {
     private _onReload?: (change: FileChange) => void;
 
     // ── Child process management ──
-    private _child: ChildProcess | null = null;
+    private _child: ChildSubprocess | null = null;
     private _entryFile: string | null = null;
-    private _nodeFlags: string[];
+    private _bunFlags: string[];
     private _debounce: number;
     private _reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(options: DevServerOptions) {
         this._rootDir = resolve(options.rootDir);
         this._onReload = options.onReload;
-        this._nodeFlags = options.nodeFlags ?? [];
+        this._bunFlags = options.bunFlags ?? [];
         this._debounce = options.debounce ?? 200;
 
         // Resolve entry file
@@ -81,7 +84,7 @@ export class DevServer {
     get devtools(): DevTools { return this._devtools; }
     get reloadCount(): number { return this._reloadCount; }
     get isRunning(): boolean { return this._running; }
-    get childProcess(): ChildProcess | null { return this._child; }
+    get childProcess(): ChildSubprocess | null { return this._child; }
 
     /** Start the dev server — spawns the entry file and begins watching */
     start(): void {
@@ -89,7 +92,7 @@ export class DevServer {
         this._running = true;
 
         console.log();
-        console.log('  ⚡ TermUI Dev Server');
+        console.log('  ⚡ TermUI Dev Server (Bun)');
         console.log(`  📁 ${this._rootDir}`);
         if (this._entryFile) {
             console.log(`  🚀 Entry: ${this._entryFile}`);
@@ -121,45 +124,48 @@ export class DevServer {
     // ── Child process lifecycle ──
 
     /**
-     * Spawn the entry file as a child process using `fork()`.
-     * The child inherits stdout/stderr for seamless terminal output.
+     * Spawn the entry file as a Bun subprocess with IPC enabled.
+     * Bun runs .ts/.tsx natively, no `--loader` flag required.
      */
     private _spawnChild(): void {
         if (!this._entryFile) return;
 
         try {
-            this._child = fork(this._entryFile, [], {
+            const child = Bun.spawn({
+                cmd: ['bun', ...this._bunFlags, this._entryFile],
                 cwd: this._rootDir,
-                stdio: ['pipe', 'inherit', 'inherit', 'ipc'],
-                execArgv: [...this._nodeFlags, '--loader', 'tsx'],
+                stdin: 'pipe',
+                stdout: 'inherit',
+                stderr: 'inherit',
+                ipc: (msg: unknown) => {
+                    const m = msg as { type?: string; event?: string; data?: unknown };
+                    if (m?.type === 'devtools' && m.event) {
+                        const detail = typeof m.data === 'string' ? m.data : JSON.stringify(m.data ?? '');
+                        this._devtools.logEvent(m.event, detail);
+                    }
+                },
+                serialization: 'json',
                 env: {
                     ...process.env,
                     TERMUI_DEV: '1',
                     NODE_ENV: 'development',
                 },
-            });
+            }) as ChildSubprocess;
 
-            this._child.on('exit', (code, signal) => {
+            this._child = child;
+
+            // Track exit asynchronously via the exited promise.
+            // child.exited resolves with the exit code; it does not reject.
+            // Spawn-time failures surface in the outer try/catch below.
+            child.exited.then((exitCode) => {
+                if (this._child !== child) return; // already replaced
+                const signal = child.signalCode;
                 if (this._running && signal !== 'SIGTERM' && signal !== 'SIGKILL') {
-                    // Unexpected exit — log it
                     const time = new Date().toLocaleTimeString();
-                    console.log(`  ❌ [${time}] Process exited (code: ${code}, signal: ${signal})`);
-                    this._devtools.logEvent('crash', `exit code ${code}`);
+                    console.log(`  ❌ [${time}] Process exited (code: ${exitCode}, signal: ${signal})`);
+                    this._devtools.logEvent('crash', `exit code ${exitCode}`);
                 }
                 this._child = null;
-            });
-
-            this._child.on('error', (err) => {
-                console.error(`  ❌ Process error: ${err.message}`);
-                this._devtools.logEvent('error', err.message);
-                this._child = null;
-            });
-
-            // Listen for IPC messages from the child (for DevTools integration)
-            this._child.on('message', (msg: any) => {
-                if (msg?.type === 'devtools') {
-                    this._devtools.logEvent(msg.event, msg.data);
-                }
             });
         } catch (err) {
             console.error(`  ❌ Failed to spawn: ${(err as Error).message}`);
@@ -177,18 +183,24 @@ export class DevServer {
         this._child = null;
 
         // Try graceful shutdown first
-        child.kill('SIGTERM');
+        try {
+            child.kill('SIGTERM');
+        } catch {
+            // already dead
+        }
 
         // Force-kill after timeout if still alive
         const forceKillTimer = setTimeout(() => {
             try {
                 child.kill('SIGKILL');
             } catch {
-                // Already dead
+                // already dead
             }
         }, 2000);
 
-        child.once('exit', () => {
+        child.exited.then(() => {
+            clearTimeout(forceKillTimer);
+        }).catch(() => {
             clearTimeout(forceKillTimer);
         });
     }
@@ -213,12 +225,11 @@ export class DevServer {
             this._reloadTimer = null;
             // Graceful reload: notify the child via IPC so it can unmount
             // cleanly (flush fibers, close alt-screen, etc.) before we kill it.
-            // IPC is available because we use fork() with the 'ipc' stdio channel.
-            if (this._child && this._child.connected) {
+            if (this._child && !this._child.killed && this._child.exitCode === null) {
                 try {
                     this._child.send({ type: 'reload' });
                 } catch {
-                    // channel already closed — fall through to hard kill
+                    // IPC channel closed — fall through to hard kill
                 }
                 // Give the child up to 200 ms to handle the message and exit
                 await new Promise<void>(r => setTimeout(r, 200));

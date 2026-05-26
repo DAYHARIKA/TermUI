@@ -18,16 +18,18 @@ TermUI is a TypeScript framework for building terminal apps. You get a layout en
 ## Quick Start
 
 ```bash
-npx create-termui-app my-app
+bunx create-termui-app my-app
 cd my-app
-npm install
-npm run dev
+bun install
+bun run dev
 ```
+
+Requires [Bun](https://bun.sh) 1.3.0 or newer.
 
 ## Manual Setup
 
 ```bash
-npm install @termuijs/core @termuijs/widgets @termuijs/jsx
+bun add @termuijs/core @termuijs/widgets @termuijs/jsx
 ```
 
 ```tsx

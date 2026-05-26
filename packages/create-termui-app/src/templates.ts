@@ -32,9 +32,9 @@ export function generateProject(config: ProjectConfig): GeneratedFile[] {
             private: true,
             type: 'module',
             scripts: {
-                dev: 'tsx --watch src/index.tsx',
+                dev: 'bun --watch src/index.tsx',
                 build: 'tsup src/index.tsx --format esm',
-                start: 'node dist/index.js',
+                start: 'bun dist/index.js',
             },
             dependencies: {
                 '@termuijs/core': 'latest',
@@ -48,9 +48,12 @@ export function generateProject(config: ProjectConfig): GeneratedFile[] {
                 ...(config.features.router ? { '@termuijs/router': 'latest' } : {}),
             },
             devDependencies: {
-                tsx: '^4.0.0',
+                '@types/bun': 'latest',
                 tsup: '^8.0.0',
                 typescript: '^5.3.0',
+            },
+            engines: {
+                bun: '>=1.3.0',
             },
         }, null, 2) + '\n',
     });

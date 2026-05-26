@@ -34,5 +34,8 @@
     "create-app",
     "generator"
   ],
+  "engines": {
+    "bun": ">=1.3.0"
+  },
   "license": "MIT"
 }
