@@ -21,16 +21,7 @@
 
 > ⭐ **GSSoC 2026 contributors:** star this repo before opening a PR. The `star-check` workflow blocks unstarred merges. Read [CONTRIBUTING.md](./CONTRIBUTING.md#gssoc-2026) for the full point system.
 
-## Repos at a glance
-
-| Repo | What lives there | Where |
-|------|------------------|-------|
-| **TermUI** (you are here) | Framework source, 13 packages, examples, tests, `create-termui-app` CLI | https://github.com/Karanjot786/TermUI |
-| **TermUI_Docs** | Documentation website (Vite + TanStack + MDX), the source of [termui.io](https://www.termui.io) | https://github.com/Karanjot786/TermUI_Docs |
-
-- Bug in the framework or a widget? Open the issue **here**.
-- Typo or fix in the docs? Open it on **TermUI_Docs**.
-- GSSoC 2026 contributions count **only on this repo** (TermUI). The docs repo does not participate.
+> 📖 **Docs site:** API docs, guides, and examples live at [termui.io](https://www.termui.io). The source is at [Karanjot786/TermUI_Docs](https://github.com/Karanjot786/TermUI_Docs).
 
 ## What is TermUI?
 
