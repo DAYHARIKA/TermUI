@@ -415,6 +415,14 @@ bun run typecheck  # Type-check all packages
 - Node.js 18+ to run published `@termuijs/*` packages from npm
 - A terminal with TTY support (256-color or truecolor recommended)
 
+## Community
+
+- [Discussions](https://github.com/Karanjot786/TermUI/discussions): ask questions, propose ideas, share what you built
+- [Wiki](https://github.com/Karanjot786/TermUI/wiki): architecture, contribution workflow, FAQ
+- [Project board](https://github.com/Karanjot786/TermUI/projects): track issues and PRs in progress
+- [Issues](https://github.com/Karanjot786/TermUI/issues): report bugs, claim tasks
+- [Docs](https://www.termui.io): API reference, guides, examples
+
 ## License
 
 MIT
