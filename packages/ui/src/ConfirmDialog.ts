@@ -45,7 +45,7 @@ export class ConfirmDialog extends Widget {
         this.markDirty();
     }
 
-    handleKey(event: KeyEvent): void {
+    private handleKey(event: KeyEvent): void {
         if (!this._visible) return;
         if (event.key === 'escape') {
             this.selectCancel();
