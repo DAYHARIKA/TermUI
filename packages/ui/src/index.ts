@@ -161,6 +161,9 @@ export type { MultilineTextInputOptions } from './MultilineTextInput.js';
 export {BasicAuthPrompt} from './BasicAuthPrompt.js';
 export type {BasicAuthCredentials,BasicAuthPromptOptions} from './BasicAuthPrompt.js'
 
+export { TextArea } from './TextArea.js';
+export type { TextAreaOptions } from './TextArea.js';
+
 
 export { Stepper } from './Stepper.js';
 export type { StepperOptions } from './Stepper.js';
@@ -183,5 +186,7 @@ export type { EmailInputOptions } from './EmailInput.js';
 export { QuizPrompt } from './QuizPrompt.js';
 export type { QuizPromptOptions, QuizQuestion, QuizResult } from './QuizPrompt.js';
 
-export { SearchInput } from './SearchInput.js';
-export type { SearchInputOptions } from './SearchInput.js';
+export { SurveyPrompt } from './SurveyPrompt.js';
+export type { SurveyPromptOptions, SurveyQuestion } from './SurveyPrompt.js';
+
+
