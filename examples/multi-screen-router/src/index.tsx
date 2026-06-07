@@ -1,16 +1,16 @@
 /** @jsxImportSource @termuijs/jsx */
-import { renderApp, useState, useEffect } from '@termuijs/jsx';
+import { renderApp, useState, useEffect, type VNode } from '@termuijs/jsx';
 import { Box, Text } from '@termuijs/widgets';
 import { Router } from '@termuijs/router';
 
-import Home from './screens/Home';
-import Items from './screens/Items';
-import ItemDetails from './screens/ItemDetails';
+import { Home } from './screens/Home';
+import { Items } from './screens/Items';
+import { ItemDetails } from './screens/ItemDetails';
 
 const router = new Router();
 
 // Expose router for simple screen modules to call navigation (example pattern)
-(globalThis as any).__termui_router = router;
+(globalThis as any /* cast to any to expose router singleton globally */).__termui_router = router;
 
 // Register routes
 router.addRoute('/', Home);
@@ -18,7 +18,7 @@ router.addRoute('/items', Items);
 router.addRoute('/items/[id]', ItemDetails);
 
 function App() {
-    const [screen, setScreen] = useState<any>(null);
+    const [screen, setScreen] = useState<VNode | null>(null);
 
     useEffect(() => {
         const unsubNav = router.events.on('navigate', (ev) => setScreen(ev.screen));

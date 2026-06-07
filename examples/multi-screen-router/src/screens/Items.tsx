@@ -5,15 +5,15 @@ import { useQueryParams } from '@termuijs/router';
 
 const ITEMS = Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1), name: `Item ${i + 1}` }));
 
-export default function Items() {
+export function Items() {
     const query = useQueryParams();
     const [selected, setSelected] = useState(0);
 
     useKeymap([
         { key: 'arrowup', action: () => setSelected((s) => Math.max(0, s - 1)), description: 'Up' },
         { key: 'arrowdown', action: () => setSelected((s) => Math.min(ITEMS.length - 1, s + 1)), description: 'Down' },
-        { key: 'enter', action: () => (globalThis as any).__termui_router.push(`/items/${ITEMS[selected].id}`), description: 'Open' },
-        { key: 'b', action: () => (globalThis as any).__termui_router.back(), description: 'Back' },
+        { key: 'enter', action: () => (globalThis as any /* cast to any to access global router instance */).__termui_router.push(`/items/${ITEMS[selected].id}`), description: 'Open' },
+        { key: 'b', action: () => (globalThis as any /* cast to any to access global router instance */).__termui_router.back(), description: 'Back' },
         { key: 'q', action: () => process.exit(0), description: 'Quit' },
     ]);
 

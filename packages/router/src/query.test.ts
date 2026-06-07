@@ -55,6 +55,16 @@ describe('Router Query Integration', () => {
         expect(r.query).toEqual({ q: 'term', page: '2' });
     });
 
+    it('Router handles multiple question marks in path correctly', () => {
+        const r = new Router();
+        r.addRoute('/search', () => 'SearchScreen');
+        
+        r.push('/search?q=what?&page=2');
+        
+        expect(r.currentPath).toBe('/search?q=what?&page=2');
+        expect(r.query).toEqual({ q: 'what?', page: '2' });
+    });
+
     it('Router serializes query object during push', () => {
         const r = new Router();
         r.addRoute('/search', () => 'SearchScreen');

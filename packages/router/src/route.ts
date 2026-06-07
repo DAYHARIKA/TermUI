@@ -157,10 +157,13 @@ function matchNested(
 }
 
 export function matchRoute(path: string, routes: Route[]): RouteMatch | null {
-    const [pathname, queryString] = path.split('?');
+    const questionIdx = path.indexOf('?');
+    const pathname = questionIdx === -1 ? path : path.substring(0, questionIdx);
+    const queryString = questionIdx === -1 ? '' : path.substring(questionIdx + 1);
+
     const match = matchNested(pathname, routes);
     if (match) {
-        match.query = parseQuery(queryString ?? '');
+        match.query = parseQuery(queryString);
         return match;
     }
     return null;
