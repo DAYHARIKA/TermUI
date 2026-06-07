@@ -14,6 +14,28 @@ export interface RouteParams {
     [key: string]: string;
 }
 
+export interface QueryParams {
+    [key: string]: string;
+}
+
+export function parseQuery(queryString: string): QueryParams {
+    const query: QueryParams = {};
+    if (!queryString) return query;
+    const searchParams = new URLSearchParams(queryString);
+    for (const [key, val] of searchParams.entries()) {
+        query[key] = val;
+    }
+    return query;
+}
+
+export function serializeQuery(query: QueryParams): string {
+    const searchParams = new URLSearchParams();
+    for (const [key, val] of Object.entries(query)) {
+        searchParams.append(key, val);
+    }
+    return searchParams.toString();
+}
+
 export interface Route {
     /** URL-like path, e.g. "/settings/theme" */
     path: string;
@@ -42,6 +64,7 @@ export interface RouteMatch {
     chain: Route[];
     params: RouteParams;
     meta: RouteMeta;
+    query: QueryParams;
 }
 
 /**
@@ -120,6 +143,7 @@ function matchNested(
                 chain: [...chain, route],
                 params,
                 meta: route.meta ?? {},
+                query: {},
             };
         }
 
@@ -133,5 +157,11 @@ function matchNested(
 }
 
 export function matchRoute(path: string, routes: Route[]): RouteMatch | null {
-    return matchNested(path, routes);
+    const [pathname, queryString] = path.split('?');
+    const match = matchNested(pathname, routes);
+    if (match) {
+        match.query = parseQuery(queryString ?? '');
+        return match;
+    }
+    return null;
 }

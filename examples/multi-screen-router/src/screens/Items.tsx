@@ -1,10 +1,12 @@
 /** @jsxImportSource @termuijs/jsx */
 import { Box, Text } from '@termuijs/widgets';
 import { useKeymap, useState } from '@termuijs/jsx';
+import { useQueryParams } from '@termuijs/router';
 
 const ITEMS = Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1), name: `Item ${i + 1}` }));
 
 export default function Items() {
+    const query = useQueryParams();
     const [selected, setSelected] = useState(0);
 
     useKeymap([
@@ -17,7 +19,7 @@ export default function Items() {
 
     return (
         <Box flexDirection="column" padding={1} gap={1}>
-            <Text bold>Items</Text>
+            <Text bold>Items (Source: {query.source ?? 'direct'})</Text>
             {ITEMS.map((it, idx) => (
                 <Text key={it.id} dim={idx !== selected}>{idx === selected ? '▸ ' : '  '}{it.name}</Text>
             ))}

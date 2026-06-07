@@ -15,12 +15,12 @@ export default function Home() {
     useKeymap([
         {
             key: 'i',
-            action: () => (globalThis as any).__termui_router.push('/items'),
+            action: () => (globalThis as any).__termui_router.push('/items', { query: { source: 'homepage', limit: '5' } }),
             description: 'Open items',
         },
         {
             key: 'enter',
-            action: () => (globalThis as any).__termui_router.push('/items'),
+            action: () => (globalThis as any).__termui_router.push('/items', { query: { source: 'homepage', limit: '5' } }),
             description: 'Open items',
         },
         {

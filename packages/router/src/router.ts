@@ -4,7 +4,7 @@
 
 import { EventEmitter } from '@termuijs/core';
 import { createElement, ErrorBoundary, unmountAll, type VNode } from '@termuijs/jsx';
-import { type Route, type RouteMatch, type RouteParams, type RouteMeta, matchRoute, compilePattern } from './route.js';
+import { type Route, type RouteMatch, type RouteParams, type RouteMeta, type QueryParams, matchRoute, compilePattern, serializeQuery } from './route.js';
 import { RouterContext } from './hooks.js';
 
 function defaultErrorScreen(err: Error): VNode {
@@ -171,8 +171,16 @@ export class Router {
     }
 
     /** Navigate to a path */
-    push(path: string): void {
-        this._navigateTo(path);
+    push(path: string, options?: { query?: QueryParams }): void {
+        let targetPath = path;
+        if (options?.query) {
+            const queryString = serializeQuery(options.query);
+            if (queryString) {
+                const separator = targetPath.includes('?') ? '&' : '?';
+                targetPath += separator + queryString;
+            }
+        }
+        this._navigateTo(targetPath);
     }
 
     private _navigateTo(path: string): void {
@@ -223,15 +231,23 @@ export class Router {
     }
 
     /** Replace current path */
-    replace(path: string): void {
-        const match = matchRoute(path, this._routes);
+    replace(path: string, options?: { query?: QueryParams }): void {
+        let targetPath = path;
+        if (options?.query) {
+            const queryString = serializeQuery(options.query);
+            if (queryString) {
+                const separator = targetPath.includes('?') ? '&' : '?';
+                targetPath += separator + queryString;
+            }
+        }
+        const match = matchRoute(targetPath, this._routes);
 
         if (!match) {
-            this.events.emit('error', new Error(`No route found for path: ${path}`));
+            this.events.emit('error', new Error(`No route found for path: ${targetPath}`));
             return;
         }
 
-        const guardResult = match.route.beforeEnter?.(path);
+        const guardResult = match.route.beforeEnter?.(targetPath);
 
         if (guardResult === false) {
             return;
@@ -243,9 +259,9 @@ export class Router {
         }
 
         if (this._history.length > 0) {
-            this._history[this._history.length - 1] = path;
+            this._history[this._history.length - 1] = targetPath;
         } else {
-            this._history.push(path);
+            this._history.push(targetPath);
         }
 
         this._currentMatch = match;
@@ -256,7 +272,7 @@ export class Router {
 
         this.events.emit('navigate', { match, screen });
 
-        match.route.afterEnter?.(path);
+        match.route.afterEnter?.(targetPath);
     }
 
     /** Go back in history */
@@ -362,6 +378,11 @@ export class Router {
     /** Current route params */
     get params(): RouteParams {
         return this._currentMatch?.params ?? {};
+    }
+
+    /** Current route query params */
+    get query(): QueryParams {
+        return this._currentMatch?.query ?? {};
     }
 
     /** History stack depth */
