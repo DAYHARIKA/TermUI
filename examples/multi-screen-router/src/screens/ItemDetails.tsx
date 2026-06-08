@@ -2,11 +2,11 @@
 import { Box, Text } from '@termuijs/widgets';
 import { useKeymap } from '@termuijs/jsx';
 
-export function ItemDetails(props: { id?: string }) {
+export default function ItemDetails(props: { id?: string }) {
     const id = props?.id ?? 'unknown';
 
     useKeymap([
-        { key: 'b', action: () => (globalThis as any /* cast to any to access global router instance */).__termui_router.back(), description: 'Back' },
+        { key: 'b', action: () => (globalThis as any).__termui_router.back(), description: 'Back' },
         { key: 'q', action: () => process.exit(0), description: 'Quit' },
     ]);
 

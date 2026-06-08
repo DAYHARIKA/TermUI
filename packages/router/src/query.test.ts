@@ -6,8 +6,16 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Router } from './router.js';
 import { parseQuery, serializeQuery } from './route.js';
 import { useQueryParams, useNavigate } from './hooks.js';
-import { unmountAll } from '@termuijs/jsx';
+import { unmountAll, type VNode } from '@termuijs/jsx';
 import { render } from '@termuijs/testing';
+
+const createMockVNode = (type: string = 'box'): VNode => {
+    return {
+        type,
+        props: {},
+        children: [],
+    };
+};
 
 describe('Query String Utils', () => {
     it('parseQuery parses standard query strings', () => {
@@ -85,23 +93,36 @@ describe('Router Query Integration', () => {
         expect(r.query).toEqual({ q: 'term', page: '2' });
     });
 
+    it('Router appends query parameters when navigating with replace and an existing query string', () => {
+        const r = new Router();
+        r.addRoute('/search', () => 'SearchScreen');
+
+        r.replace('/search?x=1', { query: { y: '2' } });
+
+        expect(r.currentPath).toBe('/search?x=1&y=2');
+        expect(r.query).toEqual({ x: '1', y: '2' });
+    });
+
     it('useQueryParams returns the parsed query parameters in a component', () => {
         const r = new Router();
         let capturedQuery: Record<string, string> | null = null;
 
-        const TestScreen = () => {
+        const TestScreen = (): VNode => {
             capturedQuery = useQueryParams();
-            return { type: 'box', props: {}, children: [] } as any; // Cast to any for jsx node mock
+            return createMockVNode();
         };
 
         r.addRoute('/search', TestScreen);
 
-        let screenToRender: any; // Cast to any for rendering
+        let screenToRender: VNode | undefined;
         r.events.on('navigate', (ev) => {
             screenToRender = ev.screen;
         });
 
         r.push('/search?q=term&page=2');
+        if (!screenToRender) {
+            throw new Error('Screen was not rendered');
+        }
         const t = render(screenToRender);
 
         expect(capturedQuery).toEqual({ q: 'term', page: '2' });
@@ -111,26 +132,29 @@ describe('Router Query Integration', () => {
 
     it('useNavigate supports navigate with a query object option', () => {
         const r = new Router();
-        let capturedNavigate: any; // Cast to any for the hook function pointer
+        let capturedNavigate: ReturnType<typeof useNavigate> | undefined;
 
-        const StartScreen = () => {
+        const StartScreen = (): VNode => {
             capturedNavigate = useNavigate();
-            return { type: 'box', props: {}, children: [] } as any; // Cast to any for jsx node mock
+            return createMockVNode();
         };
 
         r.addRoute('/start', StartScreen);
-        r.addRoute('/search', () => ({ type: 'box', props: {}, children: [] } as any));
+        r.addRoute('/search', () => createMockVNode());
 
-        let screenToRender: any; // Cast to any for rendering
+        let screenToRender: VNode | undefined;
         r.events.on('navigate', (ev) => {
             screenToRender = ev.screen;
         });
 
         r.push('/start');
+        if (!screenToRender) {
+            throw new Error('Screen was not rendered');
+        }
         const t = render(screenToRender);
 
         expect(capturedNavigate).toBeDefined();
-        capturedNavigate('/search', { query: { q: 'react', sort: 'desc' } });
+        capturedNavigate!('/search', { query: { q: 'react', sort: 'desc' } });
 
         expect(r.currentPath).toBe('/search?q=react&sort=desc');
         expect(r.query).toEqual({ q: 'react', sort: 'desc' });

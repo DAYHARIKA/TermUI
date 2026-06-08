@@ -10,17 +10,17 @@ import { Router } from '@termuijs/router';
 
 declare const router: Router;
 
-export function Home() {
+export default function Home() {
     // Navigate to items list with `i` or Enter
     useKeymap([
         {
             key: 'i',
-            action: () => (globalThis as any /* cast to any to access global router instance */).__termui_router.push('/items', { query: { source: 'homepage', limit: '5' } }),
+            action: () => (globalThis as any).__termui_router.push('/items'),
             description: 'Open items',
         },
         {
             key: 'enter',
-            action: () => (globalThis as any /* cast to any to access global router instance */).__termui_router.push('/items', { query: { source: 'homepage', limit: '5' } }),
+            action: () => (globalThis as any).__termui_router.push('/items'),
             description: 'Open items',
         },
         {
